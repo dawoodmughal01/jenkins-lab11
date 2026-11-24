@@ -80,11 +80,31 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy') {
+            steps {
+                echo 'All tests passed. Deploying website.'
+                sh '''
+                    docker rm -f lab11-prod || true
+                    docker run -d --name lab11-prod --restart unless-stopped -p 80:80 ${IMAGE_NAME}:${BUILD_NUMBER}
+                    sleep 2
+                    curl -sf http://localhost/ > /dev/null
+                '''
+            }
+        }
     }
 
     post {
         always {
             sh 'docker rm -f lab11-staging || true'
+        }
+
+        success {
+            echo "Build ${BUILD_NUMBER} deployed successfully"
+        }
+
+        failure {
+            echo "Build ${BUILD_NUMBER} failed. Check the console output."
         }
     }
 }
